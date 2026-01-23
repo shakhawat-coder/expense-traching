@@ -9,6 +9,7 @@ import {
   Receipt,
   User,
   Wallet,
+  PiggyBank,
 } from "lucide-react"
 
 import { SearchForm } from "@/components/search-form"
@@ -42,6 +43,11 @@ const data = {
           title: "Transactions",
           url: "/dashboard/transactions",
           icon: Receipt,
+        },
+        {
+          title: "Savings",
+          url: "/dashboard/savings",
+          icon: PiggyBank,
         },
       ],
     },
