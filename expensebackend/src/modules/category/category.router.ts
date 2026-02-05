@@ -9,4 +9,4 @@ router.get("/:id", categoryController.getCategoryById);
 router.put("/:id", categoryController.updateCategory);
 router.delete("/:id", categoryController.deleteCategory);
 
-export default router;
+export const categoryRouter = router;
