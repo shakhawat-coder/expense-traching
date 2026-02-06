@@ -29,7 +29,9 @@ model User {
   email         String    @unique
   password      String
   role          Role      @default(USER)
-  emailVerified Boolean   @default(false)
+  emailVerified   Boolean   @default(false)
+  verificationOtp String?
+  otpExpiresAt    DateTime?
   incomes       Income[]
   expenses      Expense[]
   createdAt     DateTime  @default(now())

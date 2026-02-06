@@ -16,11 +16,13 @@ async function seedAdmin() {
       },
     });
     if (existingUser) {
-      console.log("Admin user already exists");
-      return;
+      console.log("Admin user already exists, deleting to recreate with correct role...");
+      await prisma.user.delete({
+        where: { email: adminData.email },
+      });
     }
 
-    const sigUpAdmin = await fetch("http://localhost:5000/api/users", {
+    const sigUpAdmin = await fetch("http://localhost:5000/api/auth/signup", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
