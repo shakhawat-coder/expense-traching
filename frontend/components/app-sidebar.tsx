@@ -3,20 +3,14 @@
 import * as React from "react"
 import { usePathname } from "next/navigation"
 import {
-  BarChart3,
-  LayoutDashboard,
-  ListFilter,
-  Receipt,
-  User,
-  Wallet,
-  PiggyBank,
+  LogOut,
 } from "lucide-react"
 
 import { SearchForm } from "@/components/search-form"
-import { VersionSwitcher } from "@/components/version-switcher"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -25,62 +19,28 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarSeparator,
 } from "@/components/ui/sidebar"
 import Link from "next/link"
-
-// This is sample data.
-const data = {
-  navMain: [
-    {
-      title: "Overview",
-      items: [
-        {
-          title: "Dashboard",
-          url: "/dashboard",
-          icon: LayoutDashboard,
-        },
-        {
-          title: "Transactions",
-          url: "/dashboard/transactions",
-          icon: Receipt,
-        },
-        {
-          title: "Savings",
-          url: "/dashboard/savings",
-          icon: PiggyBank,
-        },
-      ],
-    },
-    {
-      title: "Reports",
-      items: [
-        {
-          title: "Analytics",
-          url: "/dashboard/analytics",
-          icon: BarChart3,
-        },
-        {
-          title: "Expense History",
-          url: "/dashboard/expense-history",
-          icon: Wallet,
-        },
-      ],
-    },
-    {
-      title: "System",
-      items: [
-        {
-          title: "Profile Settings",
-          url: "/dashboard/profile",
-          icon: User,
-        },
-      ],
-    },
-  ],
-}
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/providers/auth-provider"
+import { USER_SIDEBAR_DATA, ADMIN_SIDEBAR_DATA } from "@/lib/sidebardata"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { user, logout } = useAuth()
+
+  // Determine sidebar data based on role
+  const sidebarData = user?.role === "ADMIN" ? ADMIN_SIDEBAR_DATA : USER_SIDEBAR_DATA
+
+  const handleSignOut = async () => {
+    try {
+      await logout()
+    } catch (error) {
+      console.error("Sign out error:", error)
+    }
+  }
 
   return (
     <Sidebar {...props}>
@@ -89,7 +49,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         {/* We create a SidebarGroup for each parent. */}
-        {data.navMain.map((group) => (
+        {sidebarData.navMain.map((group) => (
           <SidebarGroup key={group.title}>
             <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -117,6 +77,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroup>
         ))}
       </SidebarContent>
+      <SidebarSeparator />
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={handleSignOut} tooltip="Sign Out">
+              <LogOut />
+              <span>Sign Out</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )

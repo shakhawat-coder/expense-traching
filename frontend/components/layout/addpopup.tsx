@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { categoryApi, incomeApi, expenseApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,41 +21,45 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog"
 
+
+interface Category {
+    id: string;
+    name: string;
+    type: "INCOME" | "EXPENSE";
+}
+
 interface AddExpenseProps {
     open: boolean
     onOpenChange: (open: boolean) => void
 }
 
-const INCOME_CATEGORIES = [
-    "Salary",
-    "Freelance",
-    "Investment",
-    "Bonus",
-    "Gift",
-    "Refund",
-    "Other Income",
-]
-
-const EXPENSE_CATEGORIES = [
-    "Food & Dining",
-    "Transportation",
-    "Shopping",
-    "Entertainment",
-    "Utilities",
-    "Healthcare",
-    "Education",
-    "Travel",
-    "Other",
-]
-
 export function AddExpense({ open, onOpenChange }: AddExpenseProps) {
+    const [categories, setCategories] = useState<Category[]>([])
+    const [loading, setLoading] = useState(false)
     const [formData, setFormData] = useState({
         type: "income",
         amount: "",
-        category: "",
+        categoryId: "",
         description: "",
-        date: "",
+        date: new Date().toISOString().split('T')[0],
     })
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response: any = await categoryApi.getAll();
+                if (response.success) {
+                    setCategories(response.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch categories:", error);
+            }
+        };
+
+        if (open) {
+            fetchCategories();
+        }
+    }, [open]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
@@ -68,24 +73,57 @@ export function AddExpense({ open, onOpenChange }: AddExpenseProps) {
         setFormData(prev => ({
             ...prev,
             type: type,
-            category: "", // Reset category when switching type
+            categoryId: "", // Reset category when switching type
         }))
     }
 
     const handleCategoryChange = (value: string) => {
         setFormData(prev => ({
             ...prev,
-            category: value,
+            categoryId: value,
         }))
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        // Add your transaction submission logic here
-        console.log("Transaction submitted:", formData)
-        setFormData({ type: "expense", amount: "", category: "", description: "", date: "" })
-        onOpenChange(false)
+        setLoading(true)
+        try {
+            const payload = {
+                amount: parseFloat(formData.amount),
+                description: formData.description,
+                date: new Date(formData.date).toISOString(),
+                categoryId: formData.categoryId,
+            }
+
+            let response: any;
+            if (formData.type === "income") {
+                response = await incomeApi.create(payload);
+            } else {
+                response = await expenseApi.create(payload);
+            }
+
+            if (response.success) {
+                // toast.success("Transaction added successfully")
+                setFormData({
+                    type: "income",
+                    amount: "",
+                    categoryId: "",
+                    description: "",
+                    date: new Date().toISOString().split('T')[0],
+                })
+                onOpenChange(false)
+            }
+        } catch (error: any) {
+            console.error("Submission error:", error);
+
+        } finally {
+            setLoading(false)
+        }
     }
+
+    const filteredCategories = categories.filter(
+        (cat) => cat.type === formData.type.toUpperCase()
+    )
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -105,7 +143,7 @@ export function AddExpense({ open, onOpenChange }: AddExpenseProps) {
                                     type="button"
                                     variant={formData.type === "income" ? "default" : "outline"}
                                     onClick={() => handleTypeChange("income")}
-                                    className="flex-1 bg-green-600 text-white hover:bg-green-700"
+                                    className={`flex-1 ${formData.type === "income" ? "bg-green-600 text-white hover:bg-green-700" : ""}`}
                                 >
                                     Income
                                 </Button>
@@ -113,7 +151,7 @@ export function AddExpense({ open, onOpenChange }: AddExpenseProps) {
                                     type="button"
                                     variant={formData.type === "expense" ? "default" : "outline"}
                                     onClick={() => handleTypeChange("expense")}
-                                    className="flex-1 bg-red-600 text-white hover:bg-red-700"
+                                    className={`flex-1 ${formData.type === "expense" ? "bg-red-600 text-white hover:bg-red-700" : ""}`}
                                 >
                                     Expense
                                 </Button>
@@ -138,19 +176,20 @@ export function AddExpense({ open, onOpenChange }: AddExpenseProps) {
                             <Label htmlFor="category" className="text-right">
                                 Category
                             </Label>
-                            <Select value={formData.category} onValueChange={handleCategoryChange}>
+                            <Select value={formData.categoryId} onValueChange={handleCategoryChange}>
                                 <SelectTrigger className="col-span-3 w-full">
                                     <SelectValue placeholder="Select a category" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {(formData.type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map((cat) => (
-                                        <SelectItem key={cat} value={cat}>
-                                            {cat}
+                                    {filteredCategories.map((cat) => (
+                                        <SelectItem key={cat.id} value={cat.id}>
+                                            {cat.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
+
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="description" className="text-right">
                                 Description

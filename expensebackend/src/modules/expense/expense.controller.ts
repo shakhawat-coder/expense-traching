@@ -4,10 +4,11 @@ import { expenseService } from "./expense.service";
 
 const addExpense = async (req: Request, res: Response) => {
   try {
-    const { amount, description, date, userId, categoryId } = req.body;
+    const { amount, description, date, categoryId } = req.body;
+    const userId = req.user?.id;
 
     if (!amount || !userId || !categoryId) {
-      return apiError(res, 400, "Amount, userId, and categoryId are required");
+      return apiError(res, 400, "Amount and categoryId are required");
     }
     const addNew = await expenseService.addExpense({
       amount,
@@ -21,6 +22,20 @@ const addExpense = async (req: Request, res: Response) => {
     return apiError(res, 500, error.message || "Internal Server Error");
   }
 };
+
+const getExpenseByUser = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return apiError(res, 401, "Unauthorized");
+    }
+    const expenses = await expenseService.getExpense(userId);
+    return apiResponse(res, 200, "User expenses fetched successfully", expenses);
+  } catch (error: any) {
+    return apiError(res, 500, error.message || "Internal Server Error");
+  }
+};
+
 const getExpense = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
@@ -77,6 +92,7 @@ const deleteExpense = async (req: Request, res: Response) => {
 
 export const expenseController = {
   addExpense,
+  getExpenseByUser,
   getExpense,
   updateExpense,
   deleteExpense,

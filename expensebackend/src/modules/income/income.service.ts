@@ -24,9 +24,13 @@ const addIncome = async (income: AddIncome) => {
 const getIncome = async (userId: string) => {
   const incomes = await prisma.income.findMany({
     where: { userId },
+    include: {
+      category: true,
+    },
   });
   return incomes;
 };
+
 const updateIncome = async (id: string, incomeData: Partial<AddIncome>) => {
   const updatedIncome = await prisma.income.update({
     where: { id },

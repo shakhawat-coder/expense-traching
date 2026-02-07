@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { authService } from "./auth.service";
 import { apiError, apiResponse } from "../../utils/apiresponse";
+import { prisma } from "../../lib/prisma";
+
 
 const signUpUser = async (req: Request, res: Response) => {
   try {
@@ -54,8 +56,48 @@ const verifyEmail = async (req: Request, res: Response) => {
   }
 };
 
+const getMe = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return apiError(res, 401, "Not authorized");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        emailVerified: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) {
+      return apiError(res, 404, "User not found");
+    }
+
+    return apiResponse(res, 200, "User profile fetched successfully", user);
+  } catch (error: any) {
+    return apiError(res, 500, error.message || "Internal server error");
+  }
+};
+
+const signOut = async (req: Request, res: Response) => {
+  try {
+    res.clearCookie("token");
+    return apiResponse(res, 200, "User signed out successfully");
+  } catch (error: any) {
+    return apiError(res, 500, error.message || "Internal server error");
+  }
+};
+
 export const authController = {
   signUpUser,
   signIn,
   verifyEmail,
+  getMe,
+  signOut,
 };

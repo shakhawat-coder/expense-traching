@@ -14,12 +14,14 @@ import {
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/providers/auth-provider";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter();
+  const { login } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -52,6 +54,11 @@ export function LoginForm({
           return;
         }
         throw new Error(data.message || "Login failed");
+      }
+
+      // Update AuthContext
+      if (data.data?.user) {
+        login(data.data.user);
       }
 
       // Role-based redirect

@@ -34,54 +34,32 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import { expenseApi, incomeApi, categoryApi } from "@/lib/api"
 
-const data: History[] = [
-    {
-        id: "m5gr84i9",
-        amount: 316,
-        category: "Food",
-        description: "Lunch at restaurant",
-        date: "2023-10-10",
-    },
-    {
-        id: "3u1reuv4",
-        amount: 242,
-        category: "Home rent",
-        description: "October month rent",
-        date: "2023-10-02",
-    },
-    {
-        id: "derv1ws0",
-        amount: 837,
-        category: "Food",
-        description: "Grocery shopping",
-        date: "2023-09-024",
-    },
-    {
-        id: "5kma53ae",
-        amount: 874,
-        category: "Salary",
-        description: "September Salary",
-        date: "2023-09-15",
-    },
-    {
-        id: "bhqecj4p",
-        amount: 721,
-        category: "Dress",
-        description: "New Summer Dress",
-        date: "2023-10-01",
-    },
-]
+
 
 export type History = {
     id: string
     amount: number
+    type: "income" | "expense"
     category: string
     description: string
     date: string
 }
 
 export const columns: ColumnDef<History>[] = [
+    {
+        accessorKey: "type",
+        header: "Type",
+        cell: ({ row }) => {
+            const type = row.getValue("type") as string
+            return (
+                <div className={`capitalize font-medium ${type === "income" ? "text-green-600" : "text-red-600"}`}>
+                    {type}
+                </div>
+            )
+        },
+    },
     {
         accessorKey: "category",
         header: "Category",
@@ -116,6 +94,7 @@ export const columns: ColumnDef<History>[] = [
         header: () => <div className="text-right">Amount</div>,
         cell: ({ row }) => {
             const amount = parseFloat(row.getValue("amount"))
+            const type = row.original.type
 
             // Format the amount as a dollar amount
             const formatted = new Intl.NumberFormat("en-US", {
@@ -123,7 +102,11 @@ export const columns: ColumnDef<History>[] = [
                 currency: "USD",
             }).format(amount)
 
-            return <div className="text-right font-medium">{formatted}</div>
+            return (
+                <div className={`text-right font-medium ${type === "income" ? "text-green-600" : "text-red-600"}`}>
+                    {type === "income" ? "+" : "-"}{formatted}
+                </div>
+            )
         },
     },
     {
@@ -149,7 +132,9 @@ export const columns: ColumnDef<History>[] = [
 ]
 
 export default function ExpenseHistory() {
-    const [sorting, setSorting] = React.useState<SortingState>([])
+    const [transactions, setTransactions] = React.useState<History[]>([])
+    const [loading, setLoading] = React.useState(true)
+    const [sorting, setSorting] = React.useState<SortingState>([{ id: "date", desc: true }])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []
     )
@@ -157,8 +142,62 @@ export default function ExpenseHistory() {
         React.useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = React.useState({})
 
+    React.useEffect(() => {
+        const fetchAllData = async () => {
+            try {
+                const [expenseRes, incomeRes, categoryRes]: any = await Promise.all([
+                    expenseApi.getAll(),
+                    incomeApi.getAll(),
+                    categoryApi.getAll()
+                ]);
+
+                // Create a category lookup map for quick access
+                const categoryMap: Record<string, string> = {};
+                if (categoryRes.success) {
+                    categoryRes.data.forEach((cat: any) => {
+                        categoryMap[cat.id] = cat.name;
+                    });
+                }
+
+                const formattedExpenses = expenseRes.success ? expenseRes.data.map((item: any) => ({
+                    id: item.id,
+                    type: "expense" as const,
+                    amount: Number(item.amount),
+                    // Use nested category name or fallback to lookup map
+                    category: item.category?.name || categoryMap[item.categoryId] || "Uncategorized",
+                    description: item.description || "",
+                    date: new Date(item.date).toISOString().split('T')[0],
+                })) : [];
+
+                const formattedIncomes = incomeRes.success ? incomeRes.data.map((item: any) => ({
+                    id: item.id,
+                    type: "income" as const,
+                    amount: Number(item.amount),
+                    // Use nested category name or fallback to lookup map
+                    category: item.category?.name || categoryMap[item.categoryId] || "Uncategorized",
+                    description: item.description || "",
+                    date: new Date(item.date).toISOString().split('T')[0],
+                })) : [];
+
+                // Combine and sort by date
+                const combined = [...formattedExpenses, ...formattedIncomes].sort((a, b) =>
+                    new Date(b.date).getTime() - new Date(a.date).getTime()
+                );
+
+                setTransactions(combined);
+            } catch (error) {
+                console.error("Failed to fetch transactions:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAllData();
+    }, []);
+
+
     const table = useReactTable({
-        data,
+        data: transactions,
         columns,
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
@@ -175,6 +214,8 @@ export default function ExpenseHistory() {
             rowSelection,
         },
     })
+
+    if (loading) return <div className="py-10 text-center">Loading transactions...</div>
 
     return (
         <div className="w-full">

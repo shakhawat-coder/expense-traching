@@ -6,6 +6,7 @@ import { incomeRouter } from "./modules/income/income.router";
 import { expenseRouter } from "./modules/expense/expense.router";
 import { categoryRouter } from "./modules/category/category.router";
 import { authRouter } from "./modules/auth/auth.router";
+import { dashboardRouter } from "./modules/dashboard/dashboard.router";
 
 const app: Express = express();
 
@@ -30,6 +31,7 @@ app.get("/health", (req: Request, res: Response) => {
 
 // Category routes
 app.use("/api/auth", authRouter);
+app.use("/api/dashboard", dashboardRouter);
 app.use("/api/categories", categoryRouter);
 app.use("/api/users", userRouter);
 app.use("/api/income", incomeRouter);

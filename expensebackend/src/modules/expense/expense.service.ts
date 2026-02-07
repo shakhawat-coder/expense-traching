@@ -24,6 +24,9 @@ const addExpense = async (expense: AddExpense) => {
 const getExpense = async (userId: string) => {
   const expenses = await prisma.expense.findMany({
     where: { userId },
+    include: {
+      category: true,
+    },
   });
   return expenses;
 };

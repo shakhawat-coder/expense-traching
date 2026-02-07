@@ -1,33 +1,19 @@
-import { cookies } from "next/headers"
+"use client"
 import Link from 'next/link'
+import React from 'react'
 import ExpenseSummary from '@/components/userDashboard/expenseSummary'
 import ExpenseHistory from '@/components/userDashboard/expenseHistory'
 import MonthlyExpense from '@/components/userDashboard/expense-chart'
 import { CompareExpense } from '@/components/userDashboard/compareExpense'
 import { CategoryExpenseChart } from '@/components/userDashboard/categoryExpensechart'
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
-
-async function getUser() {
-    const cookieStore = await cookies()
-    const token = cookieStore.get("token")?.value
-
-    if (!token) return null
-
-    try {
-        const response = await fetch(`${BASE_URL}/auth/me`, {
-            headers: { Cookie: `token=${token}` }
-        })
-        const data = await response.json()
-        return data.success ? data.data : null
-    } catch (error) {
-        return null
-    }
+interface DashboardClientProps {
+    user: {
+        name: string
+    } | null
 }
 
-export default async function Dashboard() {
-    const user = await getUser()
-
+export default function DashboardClient({ user }: DashboardClientProps) {
     return (
         <>
             <div className='text-center mb-12'>
@@ -65,5 +51,3 @@ export default async function Dashboard() {
         </>
     )
 }
-
-
