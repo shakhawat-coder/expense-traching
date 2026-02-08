@@ -29,7 +29,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                     <h3 className="text-xl font-semibold mb-4 mt-10">Recent Transactions</h3>
                     <Link href="/dashboard/expense-history" className="text-blue-600 hover:underline">View All</Link>
                 </div>
-                <ExpenseHistory />
+                <ExpenseHistory isDashboard={true} />
             </div>
 
             {/* ==============chart section=========== */}

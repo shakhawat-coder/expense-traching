@@ -107,6 +107,10 @@ const signInUser = async (email: string, password: string) => {
     throw new Error("NOT_VERIFIED");
   }
 
+  if (user.isSuspended) {
+    throw new Error("Account suspended");
+  }
+
   const jwtSecret: Secret = process.env.JWT_SECRET || "fallback_secret_key_change_in_production";
 
   const token = jwt.sign(

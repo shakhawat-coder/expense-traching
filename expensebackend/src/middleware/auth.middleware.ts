@@ -2,10 +2,13 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { apiError } from "../utils/apiresponse";
 
+import { prisma } from "../lib/prisma";
+
 interface DecodedToken {
     id: string;
     role: "USER" | "ADMIN";
     email: string;
+    isSuspended?: boolean;
 }
 
 // Extend Express Request type to include user
@@ -30,7 +33,20 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
             process.env.JWT_SECRET || "fallback_secret_key_change_in_production"
         ) as DecodedToken;
 
-        req.user = decoded;
+        const user = await prisma.user.findUnique({
+            where: { id: decoded.id },
+            select: { id: true, role: true, email: true, isSuspended: true }
+        });
+
+        if (!user) {
+            return apiError(res, 401, "User not found");
+        }
+
+        if (user.isSuspended) {
+            return apiError(res, 403, "Account suspended");
+        }
+
+        req.user = user as DecodedToken;
         next();
     } catch (error) {
         return apiError(res, 401, "Token is not valid");

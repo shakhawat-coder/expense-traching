@@ -29,7 +29,8 @@ const getIncomeByUser = async (req: Request, res: Response) => {
     if (!userId) {
       return apiError(res, 401, "Unauthorized");
     }
-    const income = await incomeService.getIncome(userId);
+    const { month, year } = req.query;
+    const income = await incomeService.getIncome(userId, { month: month as string, year: year as string });
     return apiResponse(res, 200, "Income fetched successfully", income);
   } catch (error: any) {
     return apiError(res, 500, error.message || "Internal Server Error");

@@ -14,6 +14,13 @@ import {
     type VisibilityState,
 } from "@tanstack/react-table"
 import { ArrowUpDown, ChevronDown, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -131,7 +138,15 @@ export const columns: ColumnDef<History>[] = [
 
 ]
 
-export default function ExpenseHistory() {
+
+
+// ... imports
+
+interface ExpenseHistoryProps {
+    isDashboard?: boolean;
+}
+
+export default function ExpenseHistory({ isDashboard = false }: ExpenseHistoryProps) {
     const [transactions, setTransactions] = React.useState<History[]>([])
     const [loading, setLoading] = React.useState(true)
     const [sorting, setSorting] = React.useState<SortingState>([{ id: "date", desc: true }])
@@ -142,16 +157,27 @@ export default function ExpenseHistory() {
         React.useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = React.useState({})
 
+    // Default to current month and year
+    const currentDate = new Date();
+    const [selectedMonth, setSelectedMonth] = React.useState<string>((currentDate.getMonth() + 1).toString());
+    const [selectedYear, setSelectedYear] = React.useState<string>(currentDate.getFullYear().toString());
+
     React.useEffect(() => {
         const fetchAllData = async () => {
+            setLoading(true);
             try {
+                // If isDashboard, fetch recent 10 (no month/year filter)
+                // If not isDashboard, fetch by selected month/year
+                const params = isDashboard
+                    ? { limit: 10 }
+                    : { month: selectedMonth, year: selectedYear };
+
                 const [expenseRes, incomeRes, categoryRes]: any = await Promise.all([
-                    expenseApi.getAll(),
-                    incomeApi.getAll(),
+                    expenseApi.getAll(params),
+                    incomeApi.getAll(params),
                     categoryApi.getAll()
                 ]);
-
-                // Create a category lookup map for quick access
+                
                 const categoryMap: Record<string, string> = {};
                 if (categoryRes.success) {
                     categoryRes.data.forEach((cat: any) => {
@@ -193,7 +219,7 @@ export default function ExpenseHistory() {
         };
 
         fetchAllData();
-    }, []);
+    }, [selectedMonth, selectedYear]);
 
 
     const table = useReactTable({
@@ -217,9 +243,28 @@ export default function ExpenseHistory() {
 
     if (loading) return <div className="py-10 text-center">Loading transactions...</div>
 
+    const months = [
+        { value: "1", label: "January" },
+        { value: "2", label: "February" },
+        { value: "3", label: "March" },
+        { value: "4", label: "April" },
+        { value: "5", label: "May" },
+        { value: "6", label: "June" },
+        { value: "7", label: "July" },
+        { value: "8", label: "August" },
+        { value: "9", label: "September" },
+        { value: "10", label: "October" },
+        { value: "11", label: "November" },
+        { value: "12", label: "December" },
+    ];
+
+    const currentYearNum = new Date().getFullYear();
+    const years = Array.from({ length: 5 }, (_, i) => (currentYearNum - i).toString());
+
+
     return (
         <div className="w-full">
-            <div className="flex items-center py-4">
+            <div className="flex items-center py-4 gap-2">
                 <Input
                     placeholder="Search by category..."
                     value={(table.getColumn("category")?.getFilterValue() as string) ?? ""}
@@ -228,6 +273,37 @@ export default function ExpenseHistory() {
                     }
                     className="max-w-sm"
                 />
+
+                {!isDashboard && (
+                    <>
+                        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Select Month" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {months.map((month) => (
+                                    <SelectItem key={month.value} value={month.value}>
+                                        {month.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <Select value={selectedYear} onValueChange={setSelectedYear}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Select Year" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {years.map((year) => (
+                                    <SelectItem key={year} value={year}>
+                                        {year}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </>
+                )}
+
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="ml-auto">

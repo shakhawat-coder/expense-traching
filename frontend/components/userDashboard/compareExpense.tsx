@@ -1,13 +1,12 @@
 "use client"
 
-import { TrendingUp } from "lucide-react"
+import { useEffect, useState, useMemo } from "react"
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
 
 import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
@@ -17,18 +16,7 @@ import {
     ChartTooltipContent,
     type ChartConfig,
 } from "@/components/ui/chart"
-
-export const description = "A multiple bar chart"
-
-const chartData = [
-
-    { month: "June", income: 214, expense: 140 },
-    { month: "May", income: 209, expense: 130 },
-    { month: "April", income: 73, expense: 190 },
-    { month: "March", income: 237, expense: 120 },
-    { month: "February", income: 305, expense: 200 },
-    { month: "January", income: 186, expense: 80 },
-]
+import { expenseApi, incomeApi, type Expense, type Income } from "@/lib/api"
 
 const chartConfig = {
     income: {
@@ -42,11 +30,89 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function CompareExpense() {
+    // 1. Initialize state for expenses and incomes
+    const [expenses, setExpenses] = useState<Expense[]>([])
+    const [incomes, setIncomes] = useState<Income[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+
+    // 2. Fetch data inside useEffect
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [expRes, incRes] = await Promise.all([
+                    expenseApi.getAll(),
+                    incomeApi.getAll(),
+                ])
+
+                if (expRes.success) setExpenses(expRes.data)
+                if (incRes.success) setIncomes(incRes.data)
+
+                console.log("Fetched expenses:", expRes.data)
+                console.log("Fetched incomes:", incRes.data)
+            } catch (error) {
+                console.error("Error fetching comparison data:", error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        fetchData()
+    }, [])
+
+    // 3. Process the raw data into monthly aggregates for the chart
+    const { chartData, dateRangeLabel } = useMemo(() => {
+        const today = new Date()
+        const last6Months = Array.from({ length: 6 }, (_, i) => {
+            const d = new Date(today.getFullYear(), today.getMonth() - (5 - i), 1)
+            return {
+                name: d.toLocaleString("default", { month: "long" }),
+                year: d.getFullYear(),
+                key: `${d.toLocaleString("default", { month: "long" })} ${d.getFullYear()}`
+            }
+        })
+
+        const dataMap: Record<string, { month: string; income: number; expense: number }> = {}
+
+        last6Months.forEach((m) => {
+            dataMap[m.key] = { month: m.name, income: 0, expense: 0 }
+        })
+
+        const getKey = (dateStr: string) => {
+            const date = new Date(dateStr)
+            return `${date.toLocaleString("default", { month: "long" })} ${date.getFullYear()}`
+        }
+
+        incomes.forEach((inc) => {
+            const key = getKey(inc.date)
+            if (dataMap[key]) {
+                dataMap[key].income += Number(inc.amount)
+            }
+        })
+
+        expenses.forEach((exp) => {
+            const key = getKey(exp.date)
+            if (dataMap[key]) {
+                dataMap[key].expense += Number(exp.amount)
+            }
+        })
+
+        const start = last6Months[0]
+        const end = last6Months[last6Months.length - 1]
+
+        return {
+            chartData: last6Months.map(m => dataMap[m.key]),
+            dateRangeLabel: `${start.name} ${start.year} - ${end.name} ${end.year}`
+        }
+    }, [expenses, incomes])
+
+    if (isLoading) {
+        return <div className="h-[300px] flex items-center justify-center">Loading comparison data...</div>
+    }
+
     return (
         <Card className="h-full">
             <CardHeader>
-                <CardTitle>Bar Chart - Multiple</CardTitle>
-                <CardDescription>January - June 2024</CardDescription>
+                <CardTitle>Monthly Account Summary</CardTitle>
+                <CardDescription>{dateRangeLabel}</CardDescription>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig}>

@@ -39,6 +39,9 @@ const signIn = async (req: Request, res: Response) => {
     if (error.message === "NOT_VERIFIED") {
       return apiResponse(res, 403, "Please verify your email", { needVerification: true });
     }
+    if (error.message === "Account suspended") {
+      return apiError(res, 403, "Account suspended!Contact with admin");
+    }
     return apiError(res, 500, error.message || "Internal server error");
   }
 };

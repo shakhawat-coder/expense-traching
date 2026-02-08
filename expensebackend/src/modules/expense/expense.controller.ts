@@ -29,7 +29,8 @@ const getExpenseByUser = async (req: Request, res: Response) => {
     if (!userId) {
       return apiError(res, 401, "Unauthorized");
     }
-    const expenses = await expenseService.getExpense(userId);
+    const { month, year } = req.query;
+    const expenses = await expenseService.getExpense(userId, { month: month as string, year: year as string });
     return apiResponse(res, 200, "User expenses fetched successfully", expenses);
   } catch (error: any) {
     return apiError(res, 500, error.message || "Internal Server Error");

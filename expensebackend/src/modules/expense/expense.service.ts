@@ -21,12 +21,31 @@ const addExpense = async (expense: AddExpense) => {
   return addNew;
 };
 
-const getExpense = async (userId: string) => {
+const getExpense = async (userId: string, filter?: { month?: string | number, year?: string | number }) => {
+  const where: any = { userId };
+
+  if (filter?.month && filter?.year) {
+    const month = Number(filter.month);
+    const year = Number(filter.year);
+
+    if (!isNaN(month) && !isNaN(year)) {
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+      where.date = {
+        gte: startDate,
+        lte: endDate
+      };
+    }
+  }
+
   const expenses = await prisma.expense.findMany({
-    where: { userId },
+    where,
     include: {
       category: true,
     },
+    orderBy: {
+      date: 'desc'
+    }
   });
   return expenses;
 };

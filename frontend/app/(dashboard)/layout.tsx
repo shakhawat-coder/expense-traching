@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { ModeToggle } from "@/components/layout/MoodToogle"
+import { useAuth } from "@/providers/auth-provider"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -26,6 +27,8 @@ export default function DashboardLayout({ admin, user }: {
   user: React.ReactNode
 }) {
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
+  const { user: authUser } = useAuth();
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -50,10 +53,14 @@ export default function DashboardLayout({ admin, user }: {
             </Breadcrumb>
           </div>
           <div className="flex gap-3 items-center">
-            <Button variant="outline" onClick={() => setIsExpenseModalOpen(true)}>
-              Add Expense
-            </Button>
-            <AddExpense open={isExpenseModalOpen} onOpenChange={setIsExpenseModalOpen} />
+            {authUser?.role === "USER" && (
+              <>
+                <Button variant="outline" onClick={() => setIsExpenseModalOpen(true)}>
+                  Add Expense
+                </Button>
+                <AddExpense open={isExpenseModalOpen} onOpenChange={setIsExpenseModalOpen} />
+              </>
+            )}
             <ModeToggle />
           </div>
 
@@ -64,6 +71,6 @@ export default function DashboardLayout({ admin, user }: {
           {user}
         </div>
       </SidebarInset>
-    </SidebarProvider>
+    </SidebarProvider >
   )
 }

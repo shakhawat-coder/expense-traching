@@ -1,7 +1,10 @@
+import Overview from '@/components/adminDashboard/Overview'
 import React from 'react'
 
 export default function AdminDashboard() {
   return (
-    <div>Admin Dashboard</div>
+    <div>
+      <Overview />
+    </div>
   )
 }

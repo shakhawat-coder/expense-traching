@@ -4,10 +4,43 @@ type FetchOptions = RequestInit & {
     params?: Record<string, string>;
 };
 
+export interface ApiResponse<T> {
+    success: boolean;
+    data: T;
+    message?: string;
+}
+
+export interface Category {
+    id: string;
+    name: string;
+    description?: string;
+    image?: string;
+}
+
+export interface Income {
+    id: string;
+    amount: number;
+    categoryId: string;
+    category?: Category;
+    description?: string;
+    date: string;
+    userId: string;
+}
+
+export interface Expense {
+    id: string;
+    amount: number;
+    categoryId: string;
+    category?: Category;
+    description?: string;
+    date: string;
+    userId: string;
+}
+
 /**
  * Custom fetch wrapper for Next.js with sensible defaults
  */
-export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
+export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}): Promise<ApiResponse<T>> {
     const { params, headers, ...rest } = options;
 
     // Build URL with query parameters
@@ -86,6 +119,8 @@ export const userApi = {
  */
 export const dashboardApi = {
     getSummary: () => apiFetch("/dashboard/summary"),
+    getAdminSummary: () => apiFetch("/dashboard/admin-summary"),
+    getCategoryWiseExpense: (params?: any) => apiFetch("/dashboard/category-expense", { params }),
 };
 
 /**
@@ -106,16 +141,16 @@ export const categoryApi = {
  * Income specific API calls
  */
 export const incomeApi = {
-    getAll: () => apiFetch("/income"),
+    getAll: (params?: any) => apiFetch<Income[]>("/income", { params }),
     create: (payload: any) =>
-        apiFetch("/income", { method: "POST", body: JSON.stringify(payload) }),
+        apiFetch<Income>("/income", { method: "POST", body: JSON.stringify(payload) }),
 };
 
 /**
  * Expense specific API calls
  */
 export const expenseApi = {
-    getAll: () => apiFetch("/expenses"),
+    getAll: (params?: any) => apiFetch<Expense[]>("/expenses", { params }),
     create: (payload: any) =>
-        apiFetch("/expenses", { method: "POST", body: JSON.stringify(payload) }),
+        apiFetch<Expense>("/expenses", { method: "POST", body: JSON.stringify(payload) }),
 };

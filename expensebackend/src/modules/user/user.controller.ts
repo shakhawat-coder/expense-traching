@@ -47,7 +47,7 @@ const getUserById = async (req: Request, res: Response) => {
 const updateUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, isSuspended } = req.body;
     if (!id) {
       return apiError(res, 400, "User ID is required");
     }
@@ -56,6 +56,7 @@ const updateUser = async (req: Request, res: Response) => {
       email,
       password,
       role,
+      isSuspended
     });
     return apiResponse(res, 200, "User updated successfully", user);
   } catch (error: any) {

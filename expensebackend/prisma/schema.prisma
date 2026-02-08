@@ -32,6 +32,7 @@ model User {
   emailVerified   Boolean   @default(false)
   verificationOtp String?
   otpExpiresAt    DateTime?
+  isSuspended     Boolean   @default(false)
   incomes       Income[]
   expenses      Expense[]
   createdAt     DateTime  @default(now())
