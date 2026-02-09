@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api`;
 
 type FetchOptions = RequestInit & {
     params?: Record<string, string>;
@@ -50,9 +50,17 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
         url += `?${searchParams.toString()}`;
     }
 
-    const defaultHeaders: HeadersInit = {
+    const defaultHeaders: Record<string, string> = {
         "Content-Type": "application/json",
     };
+
+
+    if (typeof window !== "undefined") {
+        const token = localStorage.getItem("token");
+        if (token) {
+            defaultHeaders["Authorization"] = `Bearer ${token}`;
+        }
+    }
 
     const config: RequestInit = {
         headers: {
@@ -103,6 +111,8 @@ export const authApi = {
 
     getMe: () =>
         apiFetch("/auth/me", { method: "GET" }),
+    changePassword: (payload: any) =>
+        apiFetch("/auth/change-password", { method: "POST", body: JSON.stringify(payload) }),
 };
 /**
  * User specific API calls

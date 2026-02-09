@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import React from 'react'
 import ExpenseSummary from '@/components/userDashboard/expenseSummary'
-import ExpenseHistory from '@/components/userDashboard/expenseHistory'
+import ExpenseHistory from '@/components/userDashboard/transactionHistory'
 import MonthlyExpense from '@/components/userDashboard/expense-chart'
 import { CompareExpense } from '@/components/userDashboard/compareExpense'
 import { CategoryExpenseChart } from '@/components/userDashboard/categoryExpensechart'
@@ -17,7 +17,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     return (
         <>
             <div className='text-center mb-12'>
-                <h2 className="text-3xl font-bold">Welcome Back <span className="text-blue-700">{user?.name || 'Guest'}</span>!</h2>
+                <h2 className="text-3xl font-bold">Welcome <span className="text-blue-700">{user?.name || 'Guest'}</span>!</h2>
                 <p className="mt-2 text-gray-600">Here's a summary of your dashboard.</p>
             </div>
 

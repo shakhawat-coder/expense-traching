@@ -22,7 +22,12 @@ declare global {
 
 const auth = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const token = req.cookies.token;
+        let token = req.cookies.token;
+
+        // Also check for Authorization header
+        if (!token && req.headers.authorization?.startsWith("Bearer ")) {
+            token = req.headers.authorization.split(" ")[1];
+        }
 
         if (!token) {
             return apiError(res, 401, "No token provided, authorization denied");

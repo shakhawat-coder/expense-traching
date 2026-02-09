@@ -43,8 +43,6 @@ import {
 } from "@/components/ui/table"
 import { expenseApi, incomeApi, categoryApi } from "@/lib/api"
 
-
-
 export type History = {
     id: string
     amount: number
@@ -121,40 +119,33 @@ export const columns: ColumnDef<History>[] = [
         header: () => <div className="text-right">Actions</div>,
         enableHiding: false,
         cell: ({ row }) => {
-            const payment = row.original
-
             return (
                 <div className="text-right flex justify-end gap-3">
-                    <Button variant="ghost" className="gap-2 text-cyan-500 focus:text-destructive">
+                    <Button variant="ghost" className="gap-2 text-cyan-500 hover:text-cyan-600">
                         <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" className="gap-2 text-destructive focus:text-destructive">
+                    <Button variant="ghost" className="gap-2 text-destructive hover:text-red-600">
                         <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>
             )
         },
     }
-
 ]
 
-
-
-// ... imports
-
-interface ExpenseHistoryProps {
+interface TransactionHistoryProps {
     isDashboard?: boolean;
+    onlyExpenses?: boolean;
 }
 
-export default function ExpenseHistory({ isDashboard = false }: ExpenseHistoryProps) {
+export default function TransactionHistory({ isDashboard = false, onlyExpenses = false }: TransactionHistoryProps) {
     const [transactions, setTransactions] = React.useState<History[]>([])
     const [loading, setLoading] = React.useState(true)
     const [sorting, setSorting] = React.useState<SortingState>([{ id: "date", desc: true }])
-    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-        []
-    )
-    const [columnVisibility, setColumnVisibility] =
-        React.useState<VisibilityState>({})
+    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
+        type: !onlyExpenses // Hide type column if only showing expenses
+    })
     const [rowSelection, setRowSelection] = React.useState({})
 
     // Default to current month and year
@@ -166,18 +157,25 @@ export default function ExpenseHistory({ isDashboard = false }: ExpenseHistoryPr
         const fetchAllData = async () => {
             setLoading(true);
             try {
-                // If isDashboard, fetch recent 10 (no month/year filter)
-                // If not isDashboard, fetch by selected month/year
                 const params = isDashboard
                     ? { limit: 10 }
                     : { month: selectedMonth, year: selectedYear };
 
-                const [expenseRes, incomeRes, categoryRes]: any = await Promise.all([
+                // Conditionally fetch income based on onlyExpenses prop
+                const requests = [
                     expenseApi.getAll(params),
-                    incomeApi.getAll(params),
                     categoryApi.getAll()
-                ]);
-                
+                ];
+
+                if (!onlyExpenses) {
+                    requests.push(incomeApi.getAll(params));
+                }
+
+                const results: any = await Promise.all(requests);
+                const expenseRes = results[0];
+                const categoryRes = results[1];
+                const incomeRes = !onlyExpenses ? results[2] : { success: true, data: [] };
+
                 const categoryMap: Record<string, string> = {};
                 if (categoryRes.success) {
                     categoryRes.data.forEach((cat: any) => {
@@ -189,7 +187,6 @@ export default function ExpenseHistory({ isDashboard = false }: ExpenseHistoryPr
                     id: item.id,
                     type: "expense" as const,
                     amount: Number(item.amount),
-                    // Use nested category name or fallback to lookup map
                     category: item.category?.name || categoryMap[item.categoryId] || "Uncategorized",
                     description: item.description || "",
                     date: new Date(item.date).toISOString().split('T')[0],
@@ -199,14 +196,13 @@ export default function ExpenseHistory({ isDashboard = false }: ExpenseHistoryPr
                     id: item.id,
                     type: "income" as const,
                     amount: Number(item.amount),
-                    // Use nested category name or fallback to lookup map
                     category: item.category?.name || categoryMap[item.categoryId] || "Uncategorized",
                     description: item.description || "",
                     date: new Date(item.date).toISOString().split('T')[0],
                 })) : [];
 
                 // Combine and sort by date
-                const combined = [...formattedExpenses, ...formattedIncomes].sort((a, b) =>
+                const combined = [...formattedExpenses, ...formattedIncomes].sort((a: History, b: History) =>
                     new Date(b.date).getTime() - new Date(a.date).getTime()
                 );
 
@@ -219,7 +215,7 @@ export default function ExpenseHistory({ isDashboard = false }: ExpenseHistoryPr
         };
 
         fetchAllData();
-    }, [selectedMonth, selectedYear]);
+    }, [selectedMonth, selectedYear, isDashboard, onlyExpenses]);
 
 
     const table = useReactTable({
@@ -241,7 +237,7 @@ export default function ExpenseHistory({ isDashboard = false }: ExpenseHistoryPr
         },
     })
 
-    if (loading) return <div className="py-10 text-center">Loading transactions...</div>
+    if (loading) return <div className="py-10 text-center">Loading {onlyExpenses ? "expenses" : "transactions"}...</div>
 
     const months = [
         { value: "1", label: "January" },
@@ -264,20 +260,20 @@ export default function ExpenseHistory({ isDashboard = false }: ExpenseHistoryPr
 
     return (
         <div className="w-full">
-            <div className="flex items-center py-4 gap-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center py-4 gap-4">
                 <Input
                     placeholder="Search by category..."
                     value={(table.getColumn("category")?.getFilterValue() as string) ?? ""}
                     onChange={(event) =>
                         table.getColumn("category")?.setFilterValue(event.target.value)
                     }
-                    className="max-w-sm"
+                    className="w-full sm:max-w-sm"
                 />
 
                 {!isDashboard && (
-                    <>
+                    <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                         <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                            <SelectTrigger className="w-[180px]">
+                            <SelectTrigger className="w-full sm:w-[150px]">
                                 <SelectValue placeholder="Select Month" />
                             </SelectTrigger>
                             <SelectContent>
@@ -290,7 +286,7 @@ export default function ExpenseHistory({ isDashboard = false }: ExpenseHistoryPr
                         </Select>
 
                         <Select value={selectedYear} onValueChange={setSelectedYear}>
-                            <SelectTrigger className="w-[180px]">
+                            <SelectTrigger className="w-full sm:w-[120px]">
                                 <SelectValue placeholder="Select Year" />
                             </SelectTrigger>
                             <SelectContent>
@@ -301,7 +297,7 @@ export default function ExpenseHistory({ isDashboard = false }: ExpenseHistoryPr
                                 ))}
                             </SelectContent>
                         </Select>
-                    </>
+                    </div>
                 )}
 
                 <DropdownMenu>
@@ -331,7 +327,7 @@ export default function ExpenseHistory({ isDashboard = false }: ExpenseHistoryPr
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
-            <div className="overflow-hidden rounded-md border">
+            <div className="overflow-x-auto rounded-md border">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (

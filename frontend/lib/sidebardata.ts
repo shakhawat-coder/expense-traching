@@ -82,15 +82,5 @@ export const ADMIN_SIDEBAR_DATA = {
                 },
             ],
         },
-        {
-            title: "System",
-            items: [
-                {
-                    title: "Settings",
-                    url: "/admin-dashboard/settings",
-                    icon: Settings,
-                },
-            ],
-        },
     ],
 };

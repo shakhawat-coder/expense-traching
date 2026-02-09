@@ -124,8 +124,35 @@ const signInUser = async (email: string, password: string) => {
   return { user: userWithoutPassword, token };
 };
 
+const changePassword = async (userId: string, currentPassword: string, newPassword: string) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+  if (!isPasswordValid) {
+    throw new Error("Invalid current password");
+  }
+
+  const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      password: hashedNewPassword,
+    },
+  });
+
+  return { message: "Password updated successfully" };
+};
+
 export const authService = {
   signUpUser,
   signInUser,
   verifyOtp,
+  changePassword,
 };

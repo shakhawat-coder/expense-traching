@@ -1,41 +1,14 @@
-import { cookies } from "next/headers"
-import Link from 'next/link'
-import ExpenseHistory from '@/components/userDashboard/expenseHistory'
+import TransactionHistory from '@/components/userDashboard/transactionHistory'
+import React from 'react'
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
-
-async function getUser() {
-    const cookieStore = await cookies()
-    const token = cookieStore.get("token")?.value
-
-    if (!token) return null
-
-    try {
-        const response = await fetch(`${BASE_URL}/auth/me`, {
-            headers: { Cookie: `token=${token}` }
-        })
-        const data = await response.json()
-        return data.success ? data.data : null
-    } catch (error) {
-        return null
-    }
-}
-
-export default async function Dashboard() {
-    const user = await getUser()
-
+export default function ExpenseHistoryPage() {
     return (
-        <>
-            {/* ===========recent transaction table=========== */}
+        <div className="p-4 sm:p-6 space-y-6">
             <div>
-                <div className="flex justify-between items-center">
-                    <h3 className="text-xl font-semibold mb-4 mt-10">Recent Transactions</h3>
-                    <Link href="/dashboard/expense-history" className="text-blue-600 hover:underline">View All</Link>
-                </div>
-                <ExpenseHistory />
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Expense History</h2>
+                <p className="text-muted-foreground text-sm sm:text-base">View and filter your complete expense records.</p>
             </div>
-        </>
+            <TransactionHistory isDashboard={false} onlyExpenses={true} />
+        </div>
     )
 }
-
-

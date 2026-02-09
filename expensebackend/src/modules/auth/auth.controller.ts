@@ -27,13 +27,14 @@ const signIn = async (req: Request, res: Response) => {
 
     res.cookie("token", result.token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: true, // Always true for cross-site cookies
+      sameSite: "none", // Required for cross-site fetches
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return apiResponse(res, 200, "User signed in successfully", {
       user: result.user,
+      token: result.token,
     });
   } catch (error: any) {
     if (error.message === "NOT_VERIFIED") {
@@ -90,10 +91,34 @@ const getMe = async (req: Request, res: Response) => {
 
 const signOut = async (req: Request, res: Response) => {
   try {
-    res.clearCookie("token");
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
     return apiResponse(res, 200, "User signed out successfully");
   } catch (error: any) {
     return apiError(res, 500, error.message || "Internal server error");
+  }
+};
+
+const changePassword = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!userId) {
+      return apiError(res, 401, "Not authorized");
+    }
+
+    if (!currentPassword || !newPassword) {
+      return apiError(res, 400, "Current and new passwords are required");
+    }
+
+    const result = await authService.changePassword(userId, currentPassword, newPassword);
+    return apiResponse(res, 200, result.message);
+  } catch (error: any) {
+    return apiError(res, 400, error.message || "Internal server error");
   }
 };
 
@@ -103,4 +128,5 @@ export const authController = {
   verifyEmail,
   getMe,
   signOut,
+  changePassword,
 };

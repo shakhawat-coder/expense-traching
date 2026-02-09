@@ -13,7 +13,7 @@ const app: Express = express();
 // CORS configuration to support credentials (cookies)
 app.use(
   cors({
-    origin: "http://localhost:3000", // Your frontend URL
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true, // Allow cookies to be sent
   })
 );

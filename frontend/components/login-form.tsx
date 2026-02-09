@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
+import { authApi } from "@/lib/api";
 
 export function LoginForm({
   className,
@@ -34,35 +35,25 @@ export function LoginForm({
     const formData = new FormData(e.currentTarget);
 
     const payload = {
-      email: formData.get("email"),
-      password: formData.get("password"),
+      email: formData.get("email") as string,
+      password: formData.get("password") as string,
     };
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
+      const response: any = await authApi.signIn(payload);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        if (res.status === 403 && data.data?.needVerification) {
-          router.push(`/verify-email?email=${payload.email}`);
-          return;
+      // Update AuthContext and LocalStorage
+      if (response.success && response.data?.user) {
+        if (response.data.token) {
+          localStorage.setItem("token", response.data.token);
+          // Also set as cookie for middleware/server-side checks
+          document.cookie = `token=${response.data.token}; path=/; SameSite=Lax; Secure`;
         }
-        throw new Error(data.message || "Login failed");
-      }
-
-      // Update AuthContext
-      if (data.data?.user) {
-        login(data.data.user);
+        login(response.data.user);
       }
 
       // Role-based redirect
-      const userRole = data.data?.user?.role;
+      const userRole = response.data?.user?.role;
 
       if (userRole === "ADMIN") {
         router.push("/admin-dashboard");
@@ -70,6 +61,10 @@ export function LoginForm({
         router.push("/dashboard");
       }
     } catch (err: any) {
+      if (err.status === 403 && err.message === "Please verify your email") {
+        router.push(`/verify-email?email=${payload.email}`);
+        return;
+      }
       setError(err.message);
     } finally {
       setLoading(false);

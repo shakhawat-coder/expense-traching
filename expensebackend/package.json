@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch src/server.ts",
     "seed:admin": "npx tsx src/script/seedAdmin.ts",
-    "build": "tsc",
+    "build": "prisma generate && tsup src/index.ts --format esm --platform node --target node20 --outDir api --external pg-native",
+    "postinstall": "prisma generate",
     "start": "node dist/server.js"
   },
   "keywords": [],
@@ -37,6 +38,7 @@
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^8.0.0",
     "pg": "^8.18.0",
+    "tsup": "^8.5.1",
     "vercel": "^50.10.0"
   }
 }

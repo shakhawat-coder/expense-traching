@@ -1,7 +1,7 @@
 import { cookies } from "next/headers"
 import { MonthlyExpenseClient } from "./monthly-expense-chart"
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api`
 
 async function getChartData() {
     const cookieStore = await cookies()

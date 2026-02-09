@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { authApi } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,23 +37,12 @@ function VerifyEmailContent() {
         setMessage("");
 
         try {
-            const res = await fetch(`http://localhost:5000/api/auth/verify-email`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: emailState, otp }),
-            });
-            const data = await res.json();
-
-            if (!res.ok) {
-                setStatus("error");
-                setMessage(data.message || "Verification failed.");
-            } else {
-                setStatus("success");
-                setMessage(data.message || "Email verified successfully!");
-            }
-        } catch (err) {
+            const response: any = await authApi.verifyEmail({ email: emailState, otp });
+            setStatus("success");
+            setMessage(response.message || "Email verified successfully!");
+        } catch (err: any) {
             setStatus("error");
-            setMessage("An error occurred during verification.");
+            setMessage(err.message || "An error occurred during verification.");
         } finally {
             setLoading(false);
         }
