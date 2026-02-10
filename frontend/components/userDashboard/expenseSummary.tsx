@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import SummaryCard from './dashboardCommon/summaryCard'
 import { dashboardApi } from '@/lib/api'
 
@@ -7,22 +7,30 @@ export default function ExpenseSummary() {
     const [summary, setSummary] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchSummary = async () => {
-            try {
-                const response: any = await dashboardApi.getSummary();
-                if (response.success) {
-                    setSummary(response.data);
-                }
-            } catch (error) {
-                console.error("Failed to fetch summary:", error);
-            } finally {
-                setLoading(false);
+    const fetchSummary = useCallback(async () => {
+        try {
+            const response: any = await dashboardApi.getSummary();
+            if (response.success) {
+                setSummary(response.data);
             }
-        };
-
-        fetchSummary();
+        } catch (error) {
+            console.error("Failed to fetch summary:", error);
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchSummary();
+
+        // Listen for global refresh events
+        const handleRefresh = () => fetchSummary();
+        window.addEventListener('refresh-data', handleRefresh);
+
+        return () => {
+            window.removeEventListener('refresh-data', handleRefresh);
+        };
+    }, [fetchSummary]);
 
     if (loading) {
         return <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">

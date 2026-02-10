@@ -50,8 +50,27 @@ const getCategoryWiseExpense = async (req: Request, res: Response) => {
     }
 };
 
+const getAdminTransactionsTrend = async (req: Request, res: Response) => {
+    try {
+        const user = req.user;
+        if (!user || user.role !== "ADMIN") {
+            return apiError(res, 403, "Access denied");
+        }
+
+        const { month, year } = req.query;
+        const trend = await dashboardService.getAdminTransactionsTrend({
+            month: month as string,
+            year: year as string,
+        });
+        return apiResponse(res, 200, "Transactions trend fetched successfully", trend);
+    } catch (error: any) {
+        return apiError(res, 500, error.message || "Internal Server Error");
+    }
+};
+
 export const dashboardController = {
     getSummary,
     getAdminSummary,
     getCategoryWiseExpense,
+    getAdminTransactionsTrend,
 };

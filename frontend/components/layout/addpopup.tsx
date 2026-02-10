@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/dialog"
 
 
+import { useRouter } from "next/navigation"
+
 interface Category {
     id: string;
     name: string;
@@ -34,6 +36,7 @@ interface AddExpenseProps {
 }
 
 export function AddExpense({ open, onOpenChange }: AddExpenseProps) {
+    const router = useRouter()
     const [categories, setCategories] = useState<Category[]>([])
     const [loading, setLoading] = useState(false)
     const [formData, setFormData] = useState({
@@ -103,6 +106,11 @@ export function AddExpense({ open, onOpenChange }: AddExpenseProps) {
             }
 
             if (response.success) {
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new Event('refresh-data'));
+                }
+                router.refresh()
+
                 // toast.success("Transaction added successfully")
                 setFormData({
                     type: "income",

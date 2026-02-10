@@ -14,7 +14,7 @@ interface SummaryCardProps {
     title: string
     amount: string
     linkHref: string
-    linkText: string
+    linkText?: string
 }
 
 export default function SummaryCard({ title, amount, linkHref, linkText }: SummaryCardProps) {

@@ -129,8 +129,75 @@ const getCategoryWiseExpense = async (userId: string, filter?: { month?: string 
     return result;
 };
 
+const getAdminTransactionsTrend = async (filter?: { month?: string | number, year?: string | number }) => {
+    const now = new Date();
+    let startDate: Date, endDate: Date;
+
+    if (filter?.month && filter?.year) {
+        const month = Number(filter.month);
+        const year = Number(filter.year);
+        startDate = new Date(year, month - 1, 1);
+        endDate = new Date(year, month, 0, 23, 59, 59, 999);
+    } else {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    }
+
+    const [incomes, expenses] = await Promise.all([
+        prisma.income.findMany({
+            where: {
+                date: {
+                    gte: startDate,
+                    lte: endDate
+                }
+            },
+            select: { date: true }
+        }),
+        prisma.expense.findMany({
+            where: {
+                date: {
+                    gte: startDate,
+                    lte: endDate
+                }
+            },
+            select: { date: true }
+        })
+    ]);
+
+    const dateMap = new Map<string, number>();
+
+    // Initialize all days of the month with 0
+    const daysInMonth = endDate.getDate();
+    for (let i = 1; i <= daysInMonth; i++) {
+        const dateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+        dateMap.set(dateStr, 0);
+    }
+
+    incomes.forEach(inc => {
+        const dateStr = inc.date.toISOString().split('T')[0]!;
+        if (dateMap.has(dateStr)) {
+            dateMap.set(dateStr, dateMap.get(dateStr)! + 1);
+        }
+    });
+
+    expenses.forEach(exp => {
+        const dateStr = exp.date.toISOString().split('T')[0]!;
+        if (dateMap.has(dateStr)) {
+            dateMap.set(dateStr, dateMap.get(dateStr)! + 1);
+        }
+    });
+
+    const result = Array.from(dateMap.entries()).map(([date, count]) => ({
+        date,
+        transactions: count
+    }));
+
+    return result;
+};
+
 export const dashboardService = {
     getUserDashboardSummary,
     getAdminDashboardSummary,
     getCategoryWiseExpense,
+    getAdminTransactionsTrend,
 };

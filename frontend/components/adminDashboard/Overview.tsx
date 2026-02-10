@@ -44,26 +44,22 @@ export default function Overview() {
             <SummaryCard
                 title="Total Users"
                 amount={summary.totalUsers.toString()}
-                linkHref="/admin-dashboard/users"
-                linkText="View all users"
+                linkHref="#"
             />
             <SummaryCard
                 title="Total Transactions"
                 amount={summary.totalTransactions.toString()}
                 linkHref="#"
-                linkText="View all transactions"
             />
             <SummaryCard
                 title="Today's Transactions"
                 amount={summary.todaysTransactions.toString()}
                 linkHref="#"
-                linkText="View details"
             />
             <SummaryCard
                 title="Today's Joined Users"
                 amount={summary.todaysJoinUser.toString()}
-                linkHref="/admin-dashboard/users"
-                linkText="View new users"
+                linkHref="#"
             />
         </div>
     )

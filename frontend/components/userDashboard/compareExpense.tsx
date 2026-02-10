@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import React, { useEffect, useState, useMemo, useCallback } from "react"
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
 
 import {
@@ -36,27 +36,33 @@ export function CompareExpense() {
     const [isLoading, setIsLoading] = useState(true)
 
     // 2. Fetch data inside useEffect
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [expRes, incRes] = await Promise.all([
-                    expenseApi.getAll(),
-                    incomeApi.getAll(),
-                ])
+    const fetchData = useCallback(async () => {
+        try {
+            const [expRes, incRes] = await Promise.all([
+                expenseApi.getAll(),
+                incomeApi.getAll(),
+            ])
 
-                if (expRes.success) setExpenses(expRes.data)
-                if (incRes.success) setIncomes(incRes.data)
+            if (expRes.success) setExpenses(expRes.data)
+            if (incRes.success) setIncomes(incRes.data)
 
-                console.log("Fetched expenses:", expRes.data)
-                console.log("Fetched incomes:", incRes.data)
-            } catch (error) {
-                console.error("Error fetching comparison data:", error)
-            } finally {
-                setIsLoading(false)
-            }
+            console.log("Fetched expenses:", expRes.data)
+            console.log("Fetched incomes:", incRes.data)
+        } catch (error) {
+            console.error("Error fetching comparison data:", error)
+        } finally {
+            setIsLoading(false)
         }
-        fetchData()
     }, [])
+
+    useEffect(() => {
+        fetchData()
+        const handleRefresh = () => fetchData();
+        window.addEventListener('refresh-data', handleRefresh);
+        return () => {
+            window.removeEventListener('refresh-data', handleRefresh);
+        };
+    }, [fetchData])
 
     // 3. Process the raw data into monthly aggregates for the chart
     const { chartData, dateRangeLabel } = useMemo(() => {

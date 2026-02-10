@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState, useCallback } from "react"
 import { TrendingUp } from "lucide-react"
 import { LabelList, Pie, PieChart } from "recharts"
 
@@ -36,26 +36,34 @@ export function CategoryExpenseChart() {
     const [selectedMonth, setSelectedMonth] = useState<string>((currentDate.getMonth() + 1).toString());
     const [selectedYear, setSelectedYear] = useState<string>(currentDate.getFullYear().toString());
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                const res: any = await dashboardApi.getCategoryWiseExpense({
-                    month: selectedMonth,
-                    year: selectedYear
-                });
-                if (res.success) {
-                    setChartData(res.data);
-                }
-            } catch (error) {
-                console.error("Failed to fetch category expense data", error);
-            } finally {
-                setLoading(false);
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res: any = await dashboardApi.getCategoryWiseExpense({
+                month: selectedMonth,
+                year: selectedYear
+            });
+            if (res.success) {
+                setChartData(res.data);
             }
-        };
-
-        fetchData();
+        } catch (error) {
+            console.error("Failed to fetch category expense data", error);
+        } finally {
+            setLoading(false);
+        }
     }, [selectedMonth, selectedYear]);
+
+    useEffect(() => {
+        fetchData();
+
+        // Listen for global refresh events
+        const handleRefresh = () => fetchData();
+        window.addEventListener('refresh-data', handleRefresh);
+
+        return () => {
+            window.removeEventListener('refresh-data', handleRefresh);
+        };
+    }, [fetchData]);
 
     const chartConfig = {
         amount: {

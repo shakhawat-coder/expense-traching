@@ -75,7 +75,7 @@ export function AddCategoryDialog({ onCategoryAdded }: { onCategoryAdded?: () =>
                     <div className="grid gap-2">
                         <Label htmlFor="type">Type</Label>
                         <Select name="type" required>
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent>

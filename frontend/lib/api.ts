@@ -13,6 +13,7 @@ export interface ApiResponse<T> {
 export interface Category {
     id: string;
     name: string;
+    type: "INCOME" | "EXPENSE";
     description?: string;
     image?: string;
 }
@@ -130,6 +131,7 @@ export const userApi = {
 export const dashboardApi = {
     getSummary: () => apiFetch("/dashboard/summary"),
     getAdminSummary: () => apiFetch("/dashboard/admin-summary"),
+    getAdminTransactionsTrend: (params?: any) => apiFetch("/dashboard/admin/transactions-trend", { params }),
     getCategoryWiseExpense: (params?: any) => apiFetch("/dashboard/category-expense", { params }),
 };
 
@@ -154,6 +156,10 @@ export const incomeApi = {
     getAll: (params?: any) => apiFetch<Income[]>("/income", { params }),
     create: (payload: any) =>
         apiFetch<Income>("/income", { method: "POST", body: JSON.stringify(payload) }),
+    update: (id: string, payload: any) =>
+        apiFetch<Income>(`/income/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+    delete: (id: string) =>
+        apiFetch<any>(`/income/${id}`, { method: "DELETE" }),
 };
 
 /**
@@ -163,4 +169,8 @@ export const expenseApi = {
     getAll: (params?: any) => apiFetch<Expense[]>("/expenses", { params }),
     create: (payload: any) =>
         apiFetch<Expense>("/expenses", { method: "POST", body: JSON.stringify(payload) }),
+    update: (id: string, payload: any) =>
+        apiFetch<Expense>(`/expenses/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+    delete: (id: string) =>
+        apiFetch<any>(`/expenses/${id}`, { method: "DELETE" }),
 };

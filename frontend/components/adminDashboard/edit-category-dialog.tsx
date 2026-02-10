@@ -79,7 +79,7 @@ export function EditCategoryDialog({
                     <div className="grid gap-2">
                         <Label htmlFor="edit-type">Type</Label>
                         <Select value={type} onValueChange={(val: any) => setType(val)} required>
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent>
